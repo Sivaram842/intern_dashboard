@@ -22,12 +22,32 @@ const InternDashboard = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [isLogin, setIsLogin] = useState(true);
+  const [internData, setInternData] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setCurrentUser(user);
+      setCurrentView("dashboard");
+    }
+  }, []);
+
+
+  useEffect(() => {
+    fetch("https://intern-dashboard-k9ex.onrender.com/intern")
+      .then(res => res.json())
+      .then(data => {
+        console.log("Intern Data:", data);
+        setInternData(data);
+      })
+      .catch(err => console.error("Failed to fetch intern:", err));
+  }, []);
+
 
   // Simulate fetching user data from backend
   const fetchUserData = (userId) => {
-    return // Replace mockUsers.find(...) with:
-
-    fetch(`http://localhost:5000/api/user?email=${formData.email}&password=${formData.password}`)
+    return fetch(`https://intern-dashboard-k9ex.onrender.com/api/user?email=${formData.email}&password=${formData.password}`)
       .then(res => {
         if (!res.ok) throw new Error("Invalid credentials");
         return res.json();
@@ -37,6 +57,7 @@ const InternDashboard = () => {
         setCurrentView("dashboard");
       })
       .catch(() => alert("Invalid credentials"));
+
 
   };
 
@@ -49,6 +70,10 @@ const InternDashboard = () => {
       if (user) {
         setCurrentUser(user);
         setCurrentView('dashboard');
+        // After successful login
+        localStorage.setItem("currentUser", JSON.stringify(user));
+        setCurrentUser(user); // or whatever state you're using
+
       } else {
         alert('Invalid credentials');
       }
@@ -95,6 +120,7 @@ const InternDashboard = () => {
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-3xl font-bold text-white mb-2">Intern Dashboard</h1>
+
               <p className="text-slate-400">Track your impact and unlock rewards</p>
             </div>
 
@@ -201,6 +227,15 @@ const InternDashboard = () => {
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <h1 className="text-xl font-bold text-white">Intern Dashboard</h1>
+                  {internData ? (
+                    <div>
+                      <p><strong>Name:</strong> {currentUser.name}</p>
+                      <p><strong>Referral Code:</strong> {currentUser.referralCode}</p>
+                      <p><strong>Donations:</strong> ₹{currentUser.donations}</p>
+                    </div>
+                  ) : (
+                    <p>Loading intern data...</p>
+                  )}
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -210,8 +245,10 @@ const InternDashboard = () => {
                   <button
                     onClick={() => {
                       setCurrentView('login');
-                      setCurrentUser(null);
                       setFormData({ name: '', email: '', password: '' });
+                      localStorage.removeItem("currentUser");
+                      setCurrentUser(null);
+
                     }}
                     className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
                   >
